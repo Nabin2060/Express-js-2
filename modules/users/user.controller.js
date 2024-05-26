@@ -83,12 +83,75 @@ const getById = (id) => {
   return userModel.findOne({ _id: id });
 };
 
-const list = async () => {
-  return userModel.find();
+const list = async ({page=1,limit=10,search}) => {
+  console.log(page,limit);
+  const query=[];
+  //search
+  if(search?.name){
+    query.push({
+      $match:{
+        
+          '$match': {
+            name: new RegExp('n', 'gi')
+          }
+        
+      }
+    })
+  }
+  
+    //pagination
+  query.push(
+  
+    {
+      $facet: {
+        metadata: [
+          {
+            $count: "total",
+          },
+        ],
+        data: [
+          {
+            $skip: (+page - 1) * +limit,
+          },
+          {
+            $limit: +limit,  //and go check list
+          },
+        ],
+      },
+    },
+    {
+      $addFields: {
+        total: {
+          $arrayElemAt: ["$metadata.total", 0],
+        },
+      },
+    },
+    {
+      $project: {
+        metadata: 0,
+        "data.password": 0,
+      },
+    }
+  );
+  // return userModel.find();
+  const result = await userModel.aggregate(query);
+  return{
+    total:result[0]?.total || 0,
+    users:result[0]?.data,
+    page:+page,
+    limit:+limit,
+
+  };
 };
 
 const updateById = (id, payload) => {
+
   return userModel.findOneAndUpdate({ _id: id }, payload, { new: true });
+
+  // {
+  //   '$match': {
+  //     'name': new RegExp('n', 'gi')
+  //   }
 };
 
 const removeById = (id) => {

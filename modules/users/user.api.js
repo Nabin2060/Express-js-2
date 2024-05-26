@@ -155,8 +155,10 @@ router.get("/", secure(["admin"]), async (req, res, next) => {
     try {
 
         //Todo Advanced ops
-        const data = await userController.list();
-        res.json({ msg: "user list generated", data: [] });
+        const {page,limit,name}=req.query;
+        const search={name};
+        const data = await userController.list({page,limit,search});
+        res.json({ msg: "user list generated", data });
     } catch (e) {
         next(e);
     }
